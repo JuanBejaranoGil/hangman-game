@@ -1,28 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="utf-8">
     <title>Hangman Game</title>
-    <!-- Use these exact "Stable" links -->
-    <link rel="stylesheet" href="https://pyscript.net">
-    <script type="module" src="https://pyscript.net"></script>
+    <!-- Brython loads much faster than PyScript -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net"></script>
     <style>
         body { background-color: #1a1a1a; color: #00ff00; font-family: 'Courier New', monospace; text-align: center; padding: 20px; }
-        #output { white-space: pre; background: #000; padding: 20px; border: 2px solid #00ff00; border-radius: 10px; min-height: 300px; max-width: 500px; margin: 20px auto; text-align: left; overflow-x: auto; }
+        #output { white-space: pre; background: #000; padding: 20px; border: 2px solid #00ff00; border-radius: 10px; min-height: 300px; max-width: 500px; margin: 20px auto; text-align: left; }
         button { background: #00ff00; color: #000; border: none; padding: 15px 30px; font-weight: bold; cursor: pointer; border-radius: 5px; font-size: 1.2rem; }
-        button:hover { background: #00cc00; }
     </style>
 </head>
-<body>
+
+<body onload="brython()">
     <h1>PYTHON HANGMAN</h1>
-    <button id="start-btn">START / RESTART GAME</button>
-    <div id="output">Loading Python Engine...</div>
+    <button id="start-btn">START GAME</button>
+    <div id="output">Ready to play!</div>
 
-    <script type="py">
+    <script type="text/python">
+from browser import document, window
 import random
-from pyscript import display, when, document
 
-# Your original gallows
 STAGES = [r'''
   +---+
 
@@ -48,7 +47,7 @@ STAGES = [r'''
 
       |
       |
-=========''', r'''
+=========''', '''
   +---+
 
   |   |
@@ -57,7 +56,7 @@ STAGES = [r'''
 
       |
       |
-=========''', r'''
+=========''', '''
   +---+
 
   |   |
@@ -67,7 +66,7 @@ STAGES = [r'''
       |
 
       |
-=========''', r'''
+=========''', '''
   +---+
   |   |
   O   |
@@ -75,7 +74,8 @@ STAGES = [r'''
       |
       |
       |
-=========''', r'''
+=========
+''', '''
   +---+
 
   |   |
@@ -86,58 +86,50 @@ STAGES = [r'''
       |
 =========
 ''']
+WORD_LIST = ["galaxy", "pancake", "whisper", "bicycle", "rhythm", "cactus", "mirage", "thunder", "vortex", "napkin"]
 
-WORD_LIST = ["galaxy", "pancake", "whisper", "bicycle", "rhythm", "cactus", "mirage", "thunder", "vortex", "napkin", "quartz", "hammock", "glitch", "safari", "mumble", "falcon", "velvet", "stadium", "jungle", "anchor"]
-
-def web_print(text, clear=False):
-    out = document.getElementById("output")
-    if clear: out.innerHTML = ""
-    display(text, target="output", append=True)
-
-@when("click", "#start-btn")
-def play_game(event):
-    web_print("GAME STARTED!\n", clear=True)
-    
+def run_game(ev):
+    document["output"].text = "GAME STARTED!\n"
     lives = 6
     chosen_word = random.choice(WORD_LIST)
     correct_letters = []
     
-    # Initial placeholder
-    web_print("_ " * len(chosen_word))
+    document["output"].text += "_ " * len(chosen_word) + "\n"
 
     while lives > 0:
-        guess = input("Guess a letter:").lower()
+        # window.prompt is the fast web version of input()
+        guess = window.prompt("Guess a letter:").lower()
         
         if not guess or len(guess) != 1:
             continue
 
         if guess not in chosen_word:
             lives -= 1
-            web_print(f"\n'{guess}' is wrong! Lives: {lives}")
+            document["output"].text += f"\n'{guess}' is wrong! Lives: {lives}\n"
         else:
-            correct_letters.append(guess)
-            web_print(f"\nNice! '{guess}' is correct.")
+            if guess not in correct_letters:
+                correct_letters.append(guess)
+            document["output"].text += f"\nNice! '{guess}' is correct.\n"
         
-        web_print(STAGES[lives])
+        document["output"].text += STAGES[lives] + "\n"
         
-        current_display = ""
+        display_word = ""
         for letter in chosen_word:
             if letter in correct_letters:
-                current_display += letter + " "
+                display_word += letter + " "
             else:
-                current_display += "_ "
+                display_word += "_ "
         
-        web_print(current_display)
+        document["output"].text += display_word + "\n"
 
-        if "_" not in current_display:
-            web_print("\n🎉 YOU WIN!")
+        if "_" not in display_word:
+            document["output"].text += "\n🎉 YOU WIN!"
             break
         
         if lives == 0:
-            web_print(f"\n💀 GAME OVER! Word: {chosen_word}")
+            document["output"].text += f"\n💀 GAME OVER! Word: {chosen_word}"
 
-# Signal that we are ready
-document.getElementById("output").innerHTML = "READY! Click Start to play."
+document["start-btn"].bind("click", run_game)
     </script>
 </body>
 </html>
