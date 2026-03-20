@@ -1,163 +1,203 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <title>Hangman Game</title>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net"></script>
+
+    <!-- ✅ Correct PyScript -->
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+
     <style>
-        body { background-color: #1a1a1a; color: #00ff00; font-family: 'Courier New', monospace; text-align: center; padding: 20px; }
-        #output { white-space: pre; background: #000; padding: 20px; border: 2px solid #00ff00; border-radius: 10px; min-height: 250px; max-width: 500px; margin: 20px auto; text-align: left; }
-        .controls { margin-top: 20px; }
-        input { background: #333; color: #00ff00; border: 1px solid #00ff00; padding: 10px; font-size: 1.2rem; width: 50px; text-align: center; }
-        button { background: #00ff00; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px; margin-left: 10px; }
-        #guess-container { display: none; margin-top: 20px; }
+        body {
+            background-color: #1e1e1e;
+            color: #00ff00;
+            font-family: monospace;
+            padding: 20px;
+            text-align: center;
+        }
+        #output {
+            white-space: pre-wrap;
+            background: #000;
+            padding: 20px;
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            min-height: 300px;
+            max-width: 500px;
+            margin: 20px auto;
+            text-align: left;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            width: 150px;
+        }
+        button {
+            background-color: #00ff00;
+            color: black;
+            border: none;
+            padding: 12px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 5px;
+        }
     </style>
 </head>
 
-<body onload="brython()">
-    <h1>PYTHON HANGMAN</h1>
-    
-    <button id="start-btn">START NEW GAME</button>
+<body>
+    <h1>🐍 Python Hangman</h1>
 
-    <div id="output">Ready to play!</div>
+    <button onclick="startGame()">START / RESET</button>
+    <br><br>
 
-    <div id="guess-container">
-        <input type="text" id="guess-input" maxlength="1" placeholder="?">
-        <button id="guess-btn">GUESS</button>
-    </div>
+    <input id="guess-input" placeholder="Enter a letter" maxlength="1">
+    <button onclick="sendGuess()">GUESS</button>
 
-    <script type="text/python">
-from browser import document, window
+    <div id="output">Loading...</div>
+
+<script type="py">
+from pyscript import display
 import random
 
-STAGES = [r'''
-  +---+
+# --- GAME STATE ---
+chosen_word = ""
+correct_letters = []
+lives = 6
+game_over = True
 
+stages = [r'''
+  +---+
   |   |
   O   |
  /|\  |
  / \  |
-
       |
-=========''', r'''
+=========
+''', r'''
   +---+
   |   |
   O   |
  /|\  |
  /    |
-
       |
-=========''', r'''
+=========
+''', r'''
   +---+
   |   |
   O   |
  /|\  |
-
       |
       |
-=========''', r'''
+=========
+''', r'''
   +---+
-
   |   |
   O   |
  /|   |
-
       |
       |
-=========''', r'''
-  +---+
-
-  |   |
-  O   |
-
-  |   |
-      |
-
-      |
-=========''', r'''
+=========
+''', r'''
   +---+
   |   |
   O   |
-
-      |
-      |
-      |
-=========''', r'''
-  +---+
-
   |   |
       |
-
+      |
+=========
+''', r'''
+  +---+
+  |   |
+  O   |
+      |
+      |
+      |
+=========
+''', r'''
+  +---+
+  |   |
+      |
       |
       |
       |
 =========
 ''']
 
-WORD_LIST = ["galaxy", "pancake", "whisper", "bicycle", "rhythm", "cactus", "mirage", "thunder", "vortex", "napkin"]
+word_list = ["galaxy", "pancake", "whisper", "bicycle", "rhythm", "cactus", "mirage", "thunder", "vortex", "napkin"]
 
-# Global variables to track game state
-game_state = {
-    "lives": 6,
-    "chosen_word": "",
-    "correct_letters": []
-}
+# --- FUNCTIONS ---
 
-def update_display():
-    display_word = ""
-    for letter in game_state["chosen_word"]:
-        if letter in game_state["correct_letters"]:
-            display_word += letter + " "
+def start_game():
+    global chosen_word, correct_letters, lives, game_over
+    chosen_word = random.choice(word_list)
+    correct_letters = []
+    lives = 6
+    game_over = False
+
+    display("🎮 Game Started!\n", target="output", append=False)
+    display_word()
+
+def display_word():
+    display_text = ""
+    for letter in chosen_word:
+        if letter in correct_letters:
+            display_text += letter + " "
         else:
-            display_word += "_ "
-    
-    content = STAGES[game_state["lives"]] + "\n\n"
-    content += display_word + "\n"
-    content += f"\nLives left: {game_state['lives']}"
-    document["output"].text = content
+            display_text += "_ "
+    display(display_text + "\n", target="output", append=True)
 
-    if "_" not in display_word:
-        document["output"].text += "\n\n🎉 YOU WIN!"
-        document["guess-container"].style.display = "none"
-    elif game_state["lives"] == 0:
-        document["output"].text += f"\n\n💀 GAME OVER! Word: {game_state['chosen_word']}"
-        document["guess-container"].style.display = "none"
+def make_guess(guess):
+    global lives, game_over
 
-def start_game(ev):
-    game_state["lives"] = 6
-    game_state["chosen_word"] = random.choice(WORD_LIST)
-    game_state["correct_letters"] = []
-    document["guess-container"].style.display = "block"
-    document["guess-input"].value = ""
-    document["guess-input"].focus()
-    update_display()
-
-def make_guess(ev):
-    guess = document["guess-input"].value.lower()
-    document["guess-input"].value = ""
-    document["guess-input"].focus()
-
-    if not guess or len(guess) != 1 or not guess.isalpha():
+    if game_over:
+        display("Click START first!\n", target="output", append=True)
         return
 
-    if guess in game_state["chosen_word"]:
-        if guess not in game_state["correct_letters"]:
-            game_state["correct_letters"].append(guess)
+    if not guess.isalpha():
+        display("Enter a letter!\n", target="output", append=True)
+        return
+
+    guess = guess.lower()
+
+    if guess in correct_letters:
+        display("Already guessed!\n", target="output", append=True)
+        return
+
+    if guess in chosen_word:
+        correct_letters.append(guess)
+        display(f"✅ Correct: {guess}\n", target="output", append=True)
     else:
-        game_state["lives"] -= 1
-    
-    update_display()
+        lives -= 1
+        display(f"❌ Wrong: {guess} ({lives} lives left)\n", target="output", append=True)
 
-# Bind buttons
-document["start-btn"].bind("click", start_game)
-document["guess-btn"].bind("click", make_guess)
+    display(stages[lives], target="output", append=True)
+    display_word()
 
-# Allow pressing "Enter" to guess
-def check_key(ev):
-    if ev.keyCode == 13:
-        make_guess(None)
-document["guess-input"].bind("keydown", check_key)
-    </script>
+    # Win check
+    if all(letter in correct_letters for letter in chosen_word):
+        display("🎉 YOU WIN!\n", target="output", append=True)
+        game_over = True
+
+    # Lose check
+    elif lives == 0:
+        display(f"💀 GAME OVER! Word was: {chosen_word}\n", target="output", append=True)
+        game_over = True
+</script>
+
+<script>
+function startGame() {
+    pyscript.interpreter.globals.get("start_game")();
+}
+
+function sendGuess() {
+    let input = document.getElementById("guess-input");
+    let val = input.value;
+    input.value = "";
+
+    pyscript.interpreter.globals.get("make_guess")(val);
+}
+</script>
+
 </body>
 </html>
