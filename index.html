@@ -4,27 +4,39 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Hangman Game</title>
+    <!-- Corrected PyScript Links -->
     <link rel="stylesheet" href="https://pyscript.net">
     <script type="module" src="https://pyscript.net"></script>
     <style>
-        body { background-color: #1e1e1e; color: #ffffff; font-family: monospace; padding: 20px; }
+        body { background-color: #1e1e1e; color: #ffffff; font-family: monospace; padding: 20px; text-align: center; }
         h1 { color: #00ff00; }
-        #output { white-space: pre-wrap; background: #000; padding: 15px; border-radius: 5px; border: 1px solid #333; }
+        #output { white-space: pre-wrap; background: #000; padding: 15px; border-radius: 5px; border: 1px solid #333; min-height: 200px; text-align: left; max-width: 600px; margin: 20px auto; }
+        button { background-color: #00ff00; color: black; border: none; padding: 10px 20px; font-size: 1.2rem; cursor: pointer; border-radius: 5px; font-family: monospace; font-weight: bold; }
+        button:hover { background-color: #00cc00; }
     </style>
 </head>
 <body>
     <h1>Python Hangman</h1>
-    <div id="output"></div>
+    
+    <!-- The Button -->
+    <button id="game-btn" py-click="run_game">START GAME</button>
+
+    <div id="output">Click the button above to play!</div>
 
     <script type="py">
 import random
-from pyscript import display
+from pyscript import display, document
 
-# Helper to print to the web screen
 def web_print(text):
     display(text, target="output", append=True)
 
-stages = [r'''
+def run_game(event):
+    # Clear the screen and change button text
+    output_div = document.getElementById("output")
+    output_div.innerHTML = ""
+    document.getElementById("game-btn").innerHTML = "PLAY AGAIN"
+
+    stages = [r'''
   +---+
 
   |   |
@@ -33,8 +45,7 @@ stages = [r'''
  / \  |
 
       |
-=========
-''', r'''
+=========''', r'''
   +---+
   |   |
   O   |
@@ -42,8 +53,7 @@ stages = [r'''
  /    |
 
       |
-=========
-''', r'''
+=========''', r'''
   +---+
   |   |
   O   |
@@ -51,8 +61,7 @@ stages = [r'''
 
       |
       |
-=========
-''', '''
+=========''', '''
   +---+
 
   |   |
@@ -71,8 +80,7 @@ stages = [r'''
       |
 
       |
-=========
-''', '''
+=========''', '''
   +---+
   |   |
   O   |
@@ -80,8 +88,7 @@ stages = [r'''
       |
       |
       |
-=========
-''', '''
+=========''', '''
   +---+
 
   |   |
@@ -90,44 +97,48 @@ stages = [r'''
       |
       |
       |
-=========
-''']
+=========''']
 
-word_list = ["galaxy", "pancake", "whisper", "bicycle", "rhythm", "cactus", "mirage", "thunder", "vortex", "napkin", "quartz", "hammock", "glitch", "safari", "mumble", "falcon", "velvet", "stadium", "jungle", "anchor"]
+    word_list = ["galaxy", "pancake", "whisper", "bicycle", "rhythm", "cactus", "mirage", "thunder", "vortex", "napkin", "quartz", "hammock", "glitch", "safari", "mumble", "falcon", "velvet", "stadium", "jungle", "anchor"]
 
-lives = 6
-chosen_word = random.choice(word_list)
-placeholder = "_" * len(chosen_word)
-web_print(f"Word to guess: {placeholder}")
-
-correct_letters = []
-
-while lives > 0:
-    # PyScript will show a browser prompt for input()
-    guess = input("Guess a letter:").lower()
+    lives = 6
+    chosen_word = random.choice(word_list)
+    correct_letters = []
     
-    if guess not in chosen_word:
-        lives -= 1
-        web_print(f"Wrong! You have {lives} lives left.")
-    
-    web_print(stages[lives])
-    
-    current_display = ""
-    for letter in chosen_word:
-        if letter == guess or letter in correct_letters:
-            current_display += letter
-            if letter == guess:
-                correct_letters.append(guess)
+    web_print("New Game Started!")
+    web_print("_ " * len(chosen_word))
+
+    while lives > 0:
+        guess = input("Guess a letter:").lower()
+        
+        # Simple validation
+        if len(guess) != 1 or not guess.isalpha():
+            continue
+
+        if guess not in chosen_word:
+            lives -= 1
+            web_print(f"'{guess}' is not in the word. Lives left: {lives}")
         else:
-            current_display += "_"
+            web_print(f"Good job! '{guess}' is correct.")
+        
+        web_print(stages[lives])
+        
+        current_display = ""
+        for letter in chosen_word:
+            if letter in correct_letters or letter == guess:
+                current_display += letter + " "
+                if letter == guess and guess not in correct_letters:
+                    correct_letters.append(guess)
+            else:
+                current_display += "_ "
 
-    web_print(current_display)
+        web_print(current_display)
 
-    if "_" not in current_display:
-        web_print("🎉 YOU WIN!")
-        break
-    elif lives == 0:
-        web_print(f"💀 GAME OVER. The word was: {chosen_word}")
+        if "_" not in current_display:
+            web_print("🎉 YOU WIN!")
+            break
+        elif lives == 0:
+            web_print(f"💀 GAME OVER. The word was: {chosen_word}")
     </script>
 </body>
 </html>
